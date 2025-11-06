@@ -1,0 +1,6 @@
+email,last_name,first_name,middle_name,role
+student.shevchenko@email.ua,Шевченко,Яна,Володимирівна,STUDENT
+student.melnyk@email.ua,Мельник,Олександр,Романович,STUDENT
+student.lysenko@email.ua,Лисенко,Ірина,Юріївна,STUDENT
+teacher.sydorenko@email.ua,Сидоренко,Олег,Петрович,TEACHER
+teacher.dmitrenko@email.ua,Дмитренко,Сергій,Васильович,TEACHER
