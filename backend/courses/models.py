@@ -16,7 +16,7 @@ class CourseStream(models.Model):
     semester = models.IntegerField()
     course_number = models.IntegerField()
     specialty = models.ForeignKey(Specialty, on_delete=models.PROTECT)
-    users = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="streams")
+    users = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="streams", blank=True)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):

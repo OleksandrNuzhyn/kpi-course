@@ -1,0 +1,11 @@
+Login: teacher.dmitrenko@email.ua
+Password: VPSLDHwZfE7O
+
+Login: student.melnyk@email.ua
+Password: fbFSH9MVbdun
+
+Login: teacher.pavlenko@email.ua
+Password: yrmx2t59wJwr
+
+Login: student.kovalchuk@email.ua
+Password: FmfNA9JijFBc
