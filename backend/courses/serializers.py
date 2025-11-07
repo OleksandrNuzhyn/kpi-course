@@ -8,16 +8,19 @@ class UserSimpleSerializer(serializers.ModelSerializer):
         model = User
         fields = ('first_name', 'last_name', 'middle_name', 'email')
 
-class MyStreamSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CourseStream
-        fields = ('id', 'name', 'is_active')
-
 
 class SpecialtySerializer(serializers.ModelSerializer):
     class Meta:
         model = Specialty
         fields = ('code', 'name')
+
+
+class MyStreamSerializer(serializers.ModelSerializer):
+    specialty = SpecialtySerializer(read_only=True)
+
+    class Meta:
+        model = CourseStream
+        fields = ('id', 'name', 'is_active', 'specialty', 'academic_year', 'semester', 'course_number')
 
 
 class CourseStreamDetailSerializer(serializers.ModelSerializer):
@@ -39,12 +42,12 @@ class CourseStreamDetailSerializer(serializers.ModelSerializer):
 class TopicStreamSerializer(serializers.ModelSerializer):
      class Meta:
         model = CourseStream
-        fields = ('name',)
+        fields = ('id', 'name',)
 
 
 class TopicSerializer(serializers.ModelSerializer):
     teacher = UserSimpleSerializer(read_only=True)
-    stream = TopicStreamSerializer(read_only=True)
+    stream = MyStreamSerializer(read_only=True)
 
     class Meta:
         model = Topic
@@ -63,21 +66,29 @@ class TopicCreateSerializer(serializers.ModelSerializer):
 class SubmissionTopicSerializer(serializers.ModelSerializer):
     class Meta:
         model = Topic
-        fields = ('title',)
+        fields = ('title', 'description')
 
 
 class TopicSubmissionSerializer(serializers.ModelSerializer):
-    topic = SubmissionTopicSerializer(read_only=True)
+    topic = TopicSerializer(read_only=True)
     student = UserSimpleSerializer(read_only=True)
 
     class Meta:
         model = TopicSubmission
-        fields = ('id', 'status', 'topic', 'student', 'created_at')
+        fields = ('id', 'status', 'topic', 'student', 'student_vision', 'created_at')
+
+
+class TopicWithSubmissionsSerializer(TopicSerializer):
+    submissions = TopicSubmissionSerializer(many=True, read_only=True)
+
+    class Meta(TopicSerializer.Meta):
+        fields = TopicSerializer.Meta.fields + ('submissions',)
 
 
 class TopicSubmissionCreateSerializer(serializers.ModelSerializer):
-    topic_id = serializers.IntegerField()
-
+    topic_id = serializers.IntegerField(write_only=True)
+    student_vision = serializers.CharField(required=False, allow_blank=True)
+    
     class Meta:
         model = TopicSubmission
-        fields = ('topic_id',)
+        fields = ('topic_id', 'student_vision')

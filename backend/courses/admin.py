@@ -31,6 +31,12 @@ class TopicSubmissionAdmin(admin.ModelAdmin):
     list_display = ('topic', 'student', 'status', 'created_at')
     list_filter = ('status',)
     autocomplete_fields = ('topic', 'student')
+    readonly_fields = ('created_at',)
+    fieldsets = (
+        (None, {
+            'fields': ('topic', 'student', 'status', 'student_vision', 'created_at')
+        }),
+    )
 
 
 @admin.register(CourseStream)
@@ -47,6 +53,7 @@ class CourseStreamAdmin(admin.ModelAdmin):
     list_filter = ("is_active", "specialty", "academic_year", "semester")
     search_fields = ("name", "users__email", "users__first_name", "users__last_name")
     autocomplete_fields = ("users",)
+    actions = ["deactivate_streams"]
 
     def get_urls(self):
         urls = super().get_urls()
@@ -64,6 +71,15 @@ class CourseStreamAdmin(admin.ModelAdmin):
         return format_html('<a href="{}">Import Users</a>', url)
 
     import_users_link.short_description = "Import Participants"
+
+    @admin.action(description="Deactivate selected streams")
+    def deactivate_streams(self, request, queryset):
+        updated_count = queryset.update(is_active=False)
+        self.message_user(
+            request,
+            f"{updated_count} streams have been successfully deactivated",
+            messages.SUCCESS,
+        )
 
     def import_users_view(self, request, object_id):
         stream = self.get_object(request, object_id)

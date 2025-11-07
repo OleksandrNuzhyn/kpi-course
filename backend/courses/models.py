@@ -47,6 +47,7 @@ class TopicSubmission(models.Model):
     status = models.CharField(max_length=10, choices=SubmissionStatus.choices, default=SubmissionStatus.PENDING)
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, limit_choices_to={"role": "STUDENT"}, related_name="submissions")
     topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name="submissions")
+    student_vision = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

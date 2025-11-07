@@ -9,3 +9,5 @@ Password: yrmx2t59wJwr
 
 Login: student.kovalchuk@email.ua
 Password: FmfNA9JijFBc
+
+student.ivanenko@email.ua

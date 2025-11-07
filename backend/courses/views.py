@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.db.models import Max, Prefetch
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -6,12 +7,15 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import CourseStream, Topic, TopicSubmission
 from .permissions import IsStudent, IsTeacher
-from .serializers import MyStreamSerializer, TopicSerializer, TopicSubmissionSerializer, TopicSubmissionCreateSerializer, TopicCreateSerializer
+from .serializers import MyStreamSerializer, TopicSerializer, TopicSubmissionSerializer, TopicSubmissionCreateSerializer, TopicCreateSerializer, TopicWithSubmissionsSerializer
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_my_streams(request):
-    streams = request.user.streams.filter(is_active=True)
+    is_active_param = request.query_params.get('is_active', 'true').lower()
+    is_active = is_active_param == 'true'
+    
+    streams = request.user.streams.filter(is_active=is_active)
     serializer = MyStreamSerializer(streams, many=True)
     return Response(serializer.data)
 
@@ -32,7 +36,7 @@ def get_stream_topics(request, stream_id):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated, IsStudent])
 def get_my_submissions(request):
-    submissions = request.user.submissions.all()
+    submissions = request.user.submissions.order_by('-created_at')
     serializer = TopicSubmissionSerializer(submissions, many=True)
     return Response(serializer.data)
 
@@ -42,6 +46,7 @@ def create_submission(request):
     serializer = TopicSubmissionCreateSerializer(data=request.data)
     if serializer.is_valid():
         topic_id = serializer.validated_data["topic_id"]
+        student_vision = serializer.validated_data.get("student_vision", "")
         topic = get_object_or_404(Topic, id=topic_id)
         student = request.user
 
@@ -65,7 +70,11 @@ def create_submission(request):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        submission = TopicSubmission.objects.create(student=student, topic=topic)
+        submission = TopicSubmission.objects.create(
+            student=student, 
+            topic=topic,
+            student_vision=student_vision
+        )
         response_serializer = TopicSubmissionSerializer(submission)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
@@ -88,7 +97,10 @@ def cancel_submission(request, submission_id):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated, IsTeacher])
 def get_my_topics(request):
-    topics = request.user.topics.all()
+    is_active_param = request.query_params.get('is_active', 'true').lower()
+    is_active = is_active_param == 'true'
+
+    topics = request.user.topics.filter(stream__is_active=is_active)
     serializer = TopicSerializer(topics, many=True)
     return Response(serializer.data)
 
@@ -143,8 +155,21 @@ def delete_topic(request, topic_id):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated, IsTeacher])
 def get_received_submissions(request):
-    submissions = TopicSubmission.objects.filter(topic__teacher=request.user)
-    serializer = TopicSubmissionSerializer(submissions, many=True)
+    prefetch_submissions = Prefetch(
+        'submissions',
+        queryset=TopicSubmission.objects.order_by('-created_at').select_related('student'),
+    )
+
+    topics_with_submissions = Topic.objects.filter(
+        teacher=request.user,
+        submissions__isnull=False
+    ).annotate(
+        latest_submission_date=Max('submissions__created_at')
+    ).distinct().prefetch_related(
+        prefetch_submissions
+    ).order_by('-latest_submission_date')
+
+    serializer = TopicWithSubmissionsSerializer(topics_with_submissions, many=True)
     return Response(serializer.data)
 
 @api_view(["POST"])
