@@ -49,6 +49,11 @@ const isSubmitting = ref(false);
 const error = ref('');
 
 const handleSubmit = async () => {
+  if (!student_vision.value || student_vision.value.trim() === '') {
+    error.value = 'Please describe your vision for the topic. This field cannot be empty.';
+    return;
+  }
+
   isSubmitting.value = true;
   error.value = '';
   try {

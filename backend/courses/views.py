@@ -47,6 +47,10 @@ def create_submission(request):
     if serializer.is_valid():
         topic_id = serializer.validated_data["topic_id"]
         student_vision = serializer.validated_data.get("student_vision", "")
+
+        if not student_vision or not student_vision.strip():
+            return Response({"detail": "The 'student_vision' field cannot be empty"}, status=status.HTTP_400_BAD_REQUEST)
+
         topic = get_object_or_404(Topic, id=topic_id)
         student = request.user
 
