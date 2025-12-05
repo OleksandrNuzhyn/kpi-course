@@ -93,7 +93,6 @@ class EkafedraSeleniumTests(unittest.TestCase):
                 EC.url_contains("/my-submissions")
             )
         except TimeoutException:
-            # Якщо перенаправлення не відбулося, зберігаємо HTML та скріншот у файли для аналізу
             with open("submission_failure_page.html", "w", encoding="utf-8") as f:
                 f.write(self.driver.page_source)
             self.driver.save_screenshot("submission_form_failure.png")
