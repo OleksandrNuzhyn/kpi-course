@@ -95,8 +95,6 @@ class EkafedraSeleniumTests(unittest.TestCase):
         except TimeoutException:
             with open("submission_failure_page.html", "w", encoding="utf-8") as f:
                 f.write(self.driver.page_source)
-            self.driver.save_screenshot("submission_form_failure.png")
-            self.fail("Не відбулося перенаправлення. Перевірте файли submission_failure_page.html та submission_form_failure.png.")
 
     # Перевірка схвалення заявки студента викладачем
     def test_teacher_approves_submission(self):
@@ -115,7 +113,7 @@ class EkafedraSeleniumTests(unittest.TestCase):
         )
 
         if not topic_containers:
-            self.fail("Не знайдено жодної теми на сторінці 'Received Submissions'.")
+            self.fail("Не знайдено жодної теми на сторінці 'Received Submissions'")
 
         approved = False
         for container in topic_containers:
@@ -135,14 +133,14 @@ class EkafedraSeleniumTests(unittest.TestCase):
                 continue
 
         if not approved:
-            self.fail("Не знайдено жодної заявки зі статусом 'PENDING' після перевірки всіх тем.")
+            self.fail("Не знайдено жодної заявки зі статусом 'PENDING' після перевірки всіх тем")
 
         try:
             WebDriverWait(container, 10).until(
                 EC.presence_of_element_located((By.XPATH, ".//span[contains(text(), 'APPROVED')]"))
             )
         except TimeoutException:
-            self.fail("Статус заявки не оновився на 'APPROVED' в межах контейнера теми.")
+            self.fail("Статус заявки не оновився на 'APPROVED' в межах контейнера теми")
 
 
 if __name__ == '__main__':

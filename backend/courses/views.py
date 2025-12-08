@@ -52,13 +52,11 @@ def create_submission(request):
             return Response({"detail": "The 'student_vision' field cannot be empty"}, status=status.HTTP_400_BAD_REQUEST)
 
         topic = get_object_or_404(Topic, id=topic_id)
-        student = request.user
+        
+        if topic.status != Topic.TopicStatus.AVAILABLE:
+            return Response({"detail": "Topic is not available"}, status=status.HTTP_400_BAD_REQUEST)
 
-        if student not in topic.stream.users.all():
-            return Response(
-                {"detail": "You are not enrolled in the stream for this topic."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        student = request.user
 
         existing_submissions = TopicSubmission.objects.filter(
             student=student,

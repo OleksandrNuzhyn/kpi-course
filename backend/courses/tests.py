@@ -53,27 +53,27 @@ class StudentSubmissionTests(TestCase):
         self.student1 = User.objects.create_user(email="student1@test.com", password="password123", first_name="Student", last_name="One", role='STUDENT')
         self.specialty = Specialty.objects.create(code="121", name="Інженерія програмного забезпечення")
         self.stream = CourseStream.objects.create(name="Потік 2023", specialty=self.specialty, academic_year="2023-2024", semester=1, course_number=4)
-        self.stream.students.add(self.student1)
+        self.stream.users.add(self.student1)
         self.available_topic = Topic.objects.create(title="Доступна тема", description="Опис", teacher=self.teacher, stream=self.stream)
         self.taken_topic = Topic.objects.create(title="Зайнята тема", description="Опис", teacher=self.teacher, stream=self.stream, status='TAKEN')
 
     def test_student_can_create_submission_for_available_topic(self):
-        self.client.login(email="student1@test.com", password="password123")
-        response = self.client.post('/api/courses/submissions/create/', {'topic_id': self.available_topic.id, 'student_vision': 'My vision'})
+        self.client.force_authenticate(user=self.student1)
+        response = self.client.post('/api/courses/submissions/', {'topic_id': self.available_topic.id, 'student_vision': 'My vision'})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(TopicSubmission.objects.filter(student=self.student1, topic=self.available_topic).exists())
 
     def test_student_cannot_create_submission_for_taken_topic(self):
-        self.client.login(email="student1@test.com", password="password123")
-        response = self.client.post('/api/courses/submissions/create/', {'topic_id': self.taken_topic.id, 'student_vision': 'My vision'})
+        self.client.force_authenticate(user=self.student1)
+        response = self.client.post('/api/courses/submissions/', {'topic_id': self.taken_topic.id, 'student_vision': 'My vision'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('Topic is not available', response.data['detail'])
 
     def test_student_cannot_create_second_submission_in_same_stream(self):
         TopicSubmission.objects.create(student=self.student1, topic=self.available_topic, status='PENDING')
         another_topic = Topic.objects.create(title="Інша тема", description="Опис", teacher=self.teacher, stream=self.stream)
-        self.client.login(email="student1@test.com", password="password123")
-        response = self.client.post('/api/courses/submissions/create/', {'topic_id': another_topic.id, 'student_vision': 'My vision'})
+        self.client.force_authenticate(user=self.student1)
+        response = self.client.post('/api/courses/submissions/', {'topic_id': another_topic.id, 'student_vision': 'My vision'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('You already have a pending or approved submission in this stream.', response.data['detail'])
 
@@ -86,13 +86,13 @@ class TeacherSubmissionManagementTests(TestCase):
         self.student2 = User.objects.create_user(email="student2@test.com", password="password123", first_name="Student", last_name="Two", role='STUDENT')
         self.specialty = Specialty.objects.create(code="121", name="Інженерія програмного забезпечення")
         self.stream = CourseStream.objects.create(name="Потік 2023", specialty=self.specialty, academic_year="2023-2024", semester=1, course_number=4)
-        self.stream.students.add(self.student1, self.student2)
+        self.stream.users.add(self.student1, self.student2)
         self.available_topic = Topic.objects.create(title="Доступна тема", description="Опис", teacher=self.teacher, stream=self.stream)
 
     def test_teacher_can_approve_submission(self):
         submission1 = TopicSubmission.objects.create(student=self.student1, topic=self.available_topic, status='PENDING')
         submission2 = TopicSubmission.objects.create(student=self.student2, topic=self.available_topic, status='PENDING')
-        self.client.login(email="teacher@test.com", password="password123")
+        self.client.force_authenticate(user=self.teacher)
         response = self.client.post(f'/api/courses/submissions/{submission1.id}/approve/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         submission1.refresh_from_db()
@@ -104,7 +104,7 @@ class TeacherSubmissionManagementTests(TestCase):
         
     def test_teacher_can_reject_submission(self):
         submission = TopicSubmission.objects.create(student=self.student1, topic=self.available_topic, status='PENDING')
-        self.client.login(email="teacher@test.com", password="password123")
+        self.client.force_authenticate(user=self.teacher)
         response = self.client.post(f'/api/courses/submissions/{submission.id}/reject/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         submission.refresh_from_db()
